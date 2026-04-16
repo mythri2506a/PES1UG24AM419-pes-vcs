@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-/ object.c — Content-addressable object store
-=======
 // object.c — Content-addressable object store
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
 
 #include "pes.h"
 #include <stdio.h>
@@ -57,34 +53,6 @@ int object_exists(const ObjectID *id) {
 
 int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out) {
     const char *type_str;
-<<<<<<< HEAD
-    switch (type) {
-        case OBJ_BLOB:   type_str = "blob"; break;
-        case OBJ_TREE:   type_str = "tree"; break;
-        case OBJ_COMMIT: type_str = "commit"; break;
-        default: return -1;
-    }
-
-    // Build header
-    char header[64];
-    int header_len = snprintf(header, sizeof(header), "%s %zu", type_str, len);
-    if (header_len < 0) return -1;
-
-    size_t total_size = header_len + 1 + len;
-
-    // Combine header + '\0' + data
-    unsigned char *buffer = malloc(total_size);
-    if (!buffer) return -1;
-
-    memcpy(buffer, header, header_len);
-    buffer[header_len] = '\0';
-    memcpy(buffer + header_len + 1, data, len);
-
-    // Compute hash
-    compute_hash(buffer, total_size, id_out);
-
-    // Deduplication
-=======
 
     switch (type) {
         case OBJ_BLOB:
@@ -121,23 +89,14 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out
 
     compute_hash(buffer, total_size, id_out);
 
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     if (object_exists(id_out)) {
         free(buffer);
         return 0;
     }
 
-<<<<<<< HEAD
-    // Build object path
     char path[512];
     object_path(id_out, path, sizeof(path));
 
-    // Extract directory path
-=======
-    char path[512];
-    object_path(id_out, path, sizeof(path));
-
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     char dir[512];
     strncpy(dir, path, sizeof(dir) - 1);
     dir[sizeof(dir) - 1] = '\0';
@@ -149,17 +108,9 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out
     }
     *slash = '\0';
 
-<<<<<<< HEAD
-    // Create directories
     mkdir(OBJECTS_DIR, 0755);
     mkdir(dir, 0755);
 
-    // Safe temp path creation
-=======
-    mkdir(OBJECTS_DIR, 0755);
-    mkdir(dir, 0755);
-
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     char temp_path[512];
     int ret = snprintf(temp_path, sizeof(temp_path), "%s.tmp", path);
     if (ret < 0 || ret >= (int)sizeof(temp_path)) {
@@ -173,40 +124,21 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out
         return -1;
     }
 
-<<<<<<< HEAD
-    // Write object
-    ssize_t written = write(fd, buffer, total_size);
-    if (written != (ssize_t)total_size) {
-        close(fd);
-=======
     ssize_t written = write(fd, buffer, total_size);
     if (written != (ssize_t)total_size) {
         close(fd);
         unlink(temp_path);
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
         free(buffer);
         return -1;
     }
 
-<<<<<<< HEAD
-    // Ensure write reaches disk
-    if (fsync(fd) != 0) {
-        close(fd);
-=======
     if (fsync(fd) != 0) {
         close(fd);
         unlink(temp_path);
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
         free(buffer);
         return -1;
     }
 
-<<<<<<< HEAD
-    close(fd);
-
-    // Atomic rename
-    if (rename(temp_path, path) != 0) {
-=======
     if (close(fd) != 0) {
         unlink(temp_path);
         free(buffer);
@@ -215,15 +147,10 @@ int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out
 
     if (rename(temp_path, path) != 0) {
         unlink(temp_path);
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
         free(buffer);
         return -1;
     }
 
-<<<<<<< HEAD
-    // fsync directory to persist rename
-=======
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     int dir_fd = open(dir, O_RDONLY);
     if (dir_fd >= 0) {
         fsync(dir_fd);
@@ -239,16 +166,10 @@ int object_read(const ObjectID *id, ObjectType *type_out, void **data_out, size_
     object_path(id, path, sizeof(path));
 
     FILE *fp = fopen(path, "rb");
-<<<<<<< HEAD
-    if (!fp) return -1;
-
-    // Read file
-=======
     if (!fp) {
         return -1;
     }
 
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     if (fseek(fp, 0, SEEK_END) != 0) {
         fclose(fp);
         return -1;
@@ -262,21 +183,13 @@ int object_read(const ObjectID *id, ObjectType *type_out, void **data_out, size_
 
     rewind(fp);
 
-<<<<<<< HEAD
-    unsigned char *buffer = malloc(file_size);
-=======
     unsigned char *buffer = malloc((size_t)file_size);
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     if (!buffer) {
         fclose(fp);
         return -1;
     }
 
-<<<<<<< HEAD
-    if (fread(buffer, 1, file_size, fp) != (size_t)file_size) {
-=======
     if (fread(buffer, 1, (size_t)file_size, fp) != (size_t)file_size) {
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
         fclose(fp);
         free(buffer);
         return -1;
@@ -284,35 +197,20 @@ int object_read(const ObjectID *id, ObjectType *type_out, void **data_out, size_
 
     fclose(fp);
 
-<<<<<<< HEAD
-    // Verify hash
-    ObjectID computed;
-    compute_hash(buffer, file_size, &computed);
-=======
     ObjectID computed;
     compute_hash(buffer, (size_t)file_size, &computed);
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
 
     if (memcmp(computed.hash, id->hash, HASH_SIZE) != 0) {
         free(buffer);
         return -1;
     }
 
-<<<<<<< HEAD
-    // Find header separator
-    char *null_pos = memchr(buffer, '\0', file_size);
-=======
     unsigned char *null_pos = memchr(buffer, '\0', (size_t)file_size);
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     if (!null_pos) {
         free(buffer);
         return -1;
     }
 
-<<<<<<< HEAD
-    // Parse header
-=======
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     char type_str[16];
     size_t size;
 
@@ -321,10 +219,6 @@ int object_read(const ObjectID *id, ObjectType *type_out, void **data_out, size_
         return -1;
     }
 
-<<<<<<< HEAD
-    // Convert type string
-=======
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     if (strcmp(type_str, "blob") == 0) {
         *type_out = OBJ_BLOB;
     } else if (strcmp(type_str, "tree") == 0) {
@@ -336,37 +230,23 @@ int object_read(const ObjectID *id, ObjectType *type_out, void **data_out, size_
         return -1;
     }
 
-<<<<<<< HEAD
-    // Validate size
-    size_t actual_data_size = file_size - ((null_pos + 1) - (char *)buffer);
-=======
     size_t actual_data_size = (size_t)file_size - (size_t)((null_pos + 1) - buffer);
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     if (size != actual_data_size) {
         free(buffer);
         return -1;
     }
 
-<<<<<<< HEAD
-    // Extract data
-=======
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     *data_out = malloc(size);
     if (!*data_out) {
         free(buffer);
         return -1;
     }
 
-<<<<<<< HEAD
-    memcpy(*data_out, null_pos + 1, size);
-=======
     if (size > 0) {
         memcpy(*data_out, null_pos + 1, size);
     }
->>>>>>> e4a46e9 (Phase 1: implement object storage read and write)
     *len_out = size;
 
     free(buffer);
     return 0;
 }
-
